@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Txlhx DigiWallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   CSS VARIABLES & RESET
+═══════════════════════════════════════ */
+:root {
+  --bg:          #0d0f14;
+  --surface:     #151820;
+  --card:        #1a1e28;
+  --border:      #252a38;
+  --border-h:    #343b52;
+  --text:        #e8eaf0;
+  --text-2:      #9aa0b4;
+  --text-3:      #5c6278;
+  --accent:      #4f7cff;
+  --accent-soft: rgba(79,124,255,0.12);
+  --accent-h:    #6b93ff;
+  --success:     #3ecf8e;
+  --danger:      #f87171;
+  --shadow:      0 2px 16px rgba(0,0,0,0.45);
+  --shadow-h:    0 6px 28px rgba(0,0,0,0.55);
+  --radius:      14px;
+  --radius-sm:   8px;
+  --transition:  0.2s ease;
+  --sidebar-w:   220px;
+}
+[data-theme="light"] {
+  --bg:          #f4f6fb;
+  --surface:     #ffffff;
+  --card:        #ffffff;
+  --border:      #e2e6f0;
+  --border-h:    #c8cfe0;
+  --text:        #111827;
+  --text-2:      #4b5563;
+  --text-3:      #9ca3af;
+  --accent:      #3b6ef0;
+  --accent-soft: rgba(59,110,240,0.09);
+  --accent-h:    #2a5ce0;
+  --success:     #059669;
+  --danger:      #dc2626;
+  --shadow:      0 2px 12px rgba(0,0,0,0.08);
+  --shadow-h:    0 6px 24px rgba(0,0,0,0.13);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.search-input, .modal-title, .modal-footer-name {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ═══════════════════════════════════════
+   LOCK SCREEN
+═══════════════════════════════════════ */
+#lockScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #080a0f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+#lockScreen.fade-out {
+  animation: fadeOut 0.55s ease forwards;
+}
+@keyframes fadeOut { to { opacity: 0; pointer-events: none; } }
+
+.lock-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 48px 36px 40px;
+  background: #12151c;
+  border: 1px solid #1f2433;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+}
+
+.lock-icon {
+  width: 60px; height: 60px;
+  background: rgba(79,124,255,0.13);
+  border: 1px solid rgba(79,124,255,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.lock-icon:hover { background: rgba(79,124,255,0.2); }
+.lock-icon svg { width: 26px; height: 26px; stroke: #4f7cff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.lock-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  color: #e8eaf0;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.lock-sub {
+  font-size: 0.82rem;
+  color: #5c6278;
+  margin-bottom: 32px;
+}
+
+.pin-dots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.pin-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid #2a2f42;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.pin-dot.filled { background: #4f7cff; border-color: #4f7cff; }
+.pin-dot.error  { background: #f87171; border-color: #f87171; }
+
+.pin-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #0d0f14;
+  border: 1px solid #1f2433;
+  border-radius: 10px;
+  color: #e8eaf0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.pin-input:focus { border-color: #4f7cff; }
+.pin-input.shake { animation: shake 0.4s ease; border-color: #f87171; }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+
+.btn-unlock {
+  width: 100%;
+  padding: 12px;
+  background: #4f7cff;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  letter-spacing: 0.02em;
+}
+.btn-unlock:hover  { background: #6b93ff; }
+.btn-unlock:active { transform: scale(0.98); }
+
+.lock-error {
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: #f87171;
+  min-height: 18px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.lock-error.show { opacity: 1; }
+.lock-footer {
+  margin-top: 32px;
+  font-size: 0.72rem;
+  color: #2a2f42;
+}
+
+/* ═══════════════════════════════════════
+   PERSONAL VAULT MODAL
+═══════════════════════════════════════ */
+#vaultModal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#vaultModal.open { display: flex; }
+
+.vault-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 40px 32px 36px;
+  background: #12151c;
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.8), 0 0 40px rgba(56,189,248,0.08);
+  animation: vaultSlideIn 0.3s ease;
+}
+@keyframes vaultSlideIn {
+  from { transform: scale(0.93); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.vault-icon {
+  width: 52px; height: 52px;
+  background: rgba(56,189,248,0.1);
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.vault-icon svg { width: 22px; height: 22px; stroke: #38bdf8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.vault-title { font-family: 'DM Serif Display', serif; font-size: 1.25rem; color: #e8eaf0; margin-bottom: 4px; }
+.vault-sub   { font-size: 0.78rem; color: #5c6278; margin-bottom: 28px; }
+.vault-pin-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: #0d0f14;
+  border: 1px solid #1f2433;
+  border-radius: 10px;
+  color: #e8eaf0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 14px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.vault-pin-input:focus { border-color: #38bdf8; }
+.vault-pin-input.shake { animation: shake 0.4s ease; border-color: #f87171; }
+.btn-vault-unlock {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.btn-vault-unlock:hover  { opacity: 0.88; }
+.btn-vault-unlock:active { transform: scale(0.98); }
+.vault-cancel {
+  margin-top: 14px;
+  font-size: 0.76rem;
+  color: #3c4159;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.vault-cancel:hover { color: #5c6278; }
+.vault-error {
+  font-size: 0.76rem;
+  color: #f87171;
+  min-height: 16px;
+  margin-bottom: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.vault-error.show { opacity: 1; }
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+#app {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  min-height: 100vh;
+}
+#app.visible { display: block; opacity: 1; }
+
+/* ═══════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════ */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: background var(--transition), border-color var(--transition);
+  backdrop-filter: blur(8px);
+}
+
+.hamburger {
+  display: none;
+  width: 36px; height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition);
+  color: var(--text-2);
+}
+.hamburger:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.hamburger svg   { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.brand-icon {
+  width: 32px; height: 32px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(79,124,255,0.2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.brand-icon svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.brand-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.brand-name span { color: var(--accent); }
+
+.search-wrap {
+  flex: 1;
+  max-width: 380px;
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 15px; height: 15px;
+  stroke: var(--text-3); fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.search-input::placeholder { color: var(--text-3); }
+.search-input:focus { border-color: var(--accent); }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.icon-btn {
+  width: 36px; height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  color: var(--text-2);
+}
+.icon-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.icon-btn svg   { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.lock-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.lock-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.08); }
+.lock-btn svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 62px);
+}
+
+/* ══ SIDEBAR ══ */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 12px;
+  position: sticky;
+  top: 62px;
+  height: calc(100vh - 62px);
+  overflow-y: auto;
+  transition: background var(--transition), border-color var(--transition);
+  z-index: 150;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 149;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 8px;
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+.sidebar-label:first-child { margin-top: 0; }
+
+.sidebar-close-btn {
+  display: none;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  transition: all var(--transition);
+}
+.sidebar-close-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.07); }
+.sidebar-close-btn svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: 0.85rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.sidebar-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.sidebar-item .count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  background: var(--border);
+  color: var(--text-3);
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.sidebar-item:hover { background: var(--accent-soft); color: var(--text); }
+.sidebar-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.sidebar-item.active .count { background: rgba(79,124,255,0.2); color: var(--accent); }
+
+.sidebar-item.vault-item { color: #38bdf8; }
+.sidebar-item.vault-item .count { background: rgba(56,189,248,0.15); color: #38bdf8; }
+.sidebar-item.vault-item:hover  { background: rgba(56,189,248,0.1); color: #38bdf8; }
+.sidebar-item.vault-item.active { background: rgba(56,189,248,0.12); color: #38bdf8; }
+
+/* ══ MAIN CONTENT ══ */
+.main {
+  flex: 1;
+  padding: 28px 28px 48px;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════
+   STATS ROW
+═══════════════════════════════════════ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.stat-card:hover { box-shadow: var(--shadow-h); border-color: var(--border-h); }
+.stat-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.stat-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stat-num { font-size: 1.4rem; font-weight: 600; line-height: 1; color: var(--text); }
+.stat-lbl { font-size: 0.75rem; color: var(--text-3); margin-top: 3px; }
+
+/* ═══════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════ */
+.section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  margin-top: 32px;
+}
+.section-hdr:first-of-type { margin-top: 0; }
+.section-hdr h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.section-hdr span {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  font-weight: 400;
+  font-family: 'DM Sans', sans-serif;
+}
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 18px;
+}
+
+.section-hdr.vault-hdr h2 {
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-hdr.vault-hdr h2::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* ═══════════════════════════════════════
+   DOCUMENT GRID
+═══════════════════════════════════════ */
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ═══════════════════════════════════════
+   DOCUMENT CARD
+═══════════════════════════════════════ */
+.doc-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+  position: relative;
+  overflow: hidden;
+  -webkit-user-drag: none;
+}
+.doc-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.doc-card:hover { box-shadow: var(--shadow-h); border-color: var(--border-h); transform: translateY(-2px); }
+.doc-card:hover::before { opacity: 1; }
+.doc-card[data-cat="pers"]::before { background: #38bdf8; }
+
+.doc-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.doc-file-icon {
+  width: 42px; height: 48px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.doc-file-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.doc-file-icon .ext-tag {
+  position: absolute;
+  bottom: 2px; right: -2px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #fff;
+}
+
+.doc-info { flex: 1; min-width: 0; }
+.doc-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  font-size: 0.7rem;
+  color: var(--text-3);
+  background: var(--border);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.doc-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-3);
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.doc-actions { display: flex; gap: 8px; }
+.doc-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px;
+  transition: all var(--transition);
+  text-decoration: none;
+}
+.doc-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.doc-btn-view {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(79,124,255,0.2);
+}
+.doc-btn-view:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.doc-btn-dl {
+  background: transparent;
+  color: var(--text-2);
+}
+.doc-btn-dl:hover { background: var(--accent-soft); color: var(--accent); border-color: rgba(79,124,255,0.2); }
+
+/* ═══════════════════════════════════════
+   PDF MODAL
+═══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 820px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  transform: scale(0.97);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.open .modal-box { transform: scale(1); }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-title { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+.modal-close {
+  width: 32px; height: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  transition: all var(--transition);
+}
+.modal-close:hover { background: rgba(248,113,113,0.1); border-color: var(--danger); color: var(--danger); }
+.modal-close svg   { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+.modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+.modal-body iframe { width: 100%; height: 100%; min-height: 500px; border: none; }
+
+.modal-placeholder {
+  text-align: center;
+  padding: 60px 40px;
+  color: var(--text-3);
+}
+.modal-placeholder svg { width: 48px; height: 48px; stroke: var(--text-3); fill: none; stroke-width: 1.2; margin-bottom: 16px; stroke-linecap: round; stroke-linejoin: round; }
+.modal-placeholder h3  { font-size: 1rem; color: var(--text-2); margin-bottom: 6px; font-weight: 500; }
+.modal-placeholder p   { font-size: 0.82rem; margin-bottom: 20px; }
+.modal-placeholder a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background var(--transition);
+}
+.modal-placeholder a:hover { background: var(--accent-h); }
+.modal-placeholder a svg { width: 13px; height: 13px; stroke: #fff; fill: none; }
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-footer-name { font-size: 0.78rem; color: var(--text-3); }
+.modal-dl-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(79,124,255,0.2);
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+}
+.modal-dl-btn:hover { background: var(--accent); color: #fff; }
+.modal-dl-btn svg   { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ═══════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  display: none;
+}
+.empty-state svg { width: 40px; height: 40px; stroke: var(--text-3); fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 12px; }
+.empty-state p   { font-size: 0.85rem; }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 9998;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 0.82rem;
+  color: var(--text);
+  box-shadow: var(--shadow-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(12px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  max-width: calc(100vw - 48px);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast svg  { width: 15px; height: 15px; stroke: var(--success); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-h); }
+
+/* ═══════════════════════════════════════
+   VAULT SECTION — hidden until unlocked
+═══════════════════════════════════════ */
+#vaultSection {
+  display: none;
+}
+#vaultSection.unlocked {
+  display: block;
+}
+
+/* ═══════════════════════════════════════
+   CATEGORY COLOUR HELPERS
+═══════════════════════════════════════ */
+.cat-cert   { background: rgba(79,124,255,0.1);  color: #4f7cff; }
+.cat-result { background: rgba(62,207,142,0.1);  color: #3ecf8e; }
+.cat-intern { background: rgba(245,158,11,0.1);  color: #f59e0b; }
+.cat-exp    { background: rgba(167,139,250,0.1); color: #a78bfa; }
+.cat-res    { background: rgba(248,113,113,0.1); color: #f87171; }
+.cat-pers   { background: rgba(56,189,248,0.1);  color: #38bdf8; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — TABLET (max 900px)
+═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .hamburger   { display: flex; }
+  .brand-name  { display: none; }
+
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 300;
+    padding-top: 16px;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.45);
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay { display: block; }
+  .sidebar-overlay.hidden { display: none; }
+  .sidebar-close-btn { display: flex; }
+  .main    { padding: 20px 16px 40px; }
+  .topbar  { padding: 0 16px; }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — MOBILE (max 600px)
+═══════════════════════════════════════ */
+@media (max-width: 600px) {
+  .search-wrap   { max-width: unset; flex: 1; }
+  .lock-btn span { display: none; }
+  .doc-grid      { grid-template-columns: 1fr; }
+  .stats-row     { grid-template-columns: repeat(2, 1fr); }
+  .stat-card     { padding: 14px 16px; gap: 10px; }
+  .stat-num      { font-size: 1.2rem; }
+  .modal-overlay { padding: 12px; }
+  .modal-body iframe { min-height: 340px; }
+  .modal-placeholder { padding: 40px 20px; }
+  .toast { bottom: 16px; right: 16px; left: 16px; max-width: unset; }
+  .topbar { gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOCK SCREEN
+══════════════════════════════════════ -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon" id="lockIconTrigger" title="">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="lock-title">Document Wallet</div>
+    <div class="lock-sub">Enter your PIN to access your documents</div>
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <input class="pin-input" type="password" id="pinInput" maxlength="4" placeholder="····" autocomplete="off" inputmode="numeric">
+    <button class="btn-unlock" onclick="tryUnlock()">Unlock Wallet</button>
+    <div class="lock-error" id="lockError">Incorrect PIN. Please try again.</div>
+    <div class="lock-footer">Txlhx DigiWallet &nbsp;·&nbsp; Private &amp; Secure</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PERSONAL VAULT PIN MODAL
+══════════════════════════════════════ -->
+<div id="vaultModal">
+  <div class="vault-card">
+    <div class="vault-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div class="vault-title">Personal Vault</div>
+    <div class="vault-sub">Enter vault PIN to access private documents</div>
+    <div class="vault-error" id="vaultError">Incorrect vault PIN.</div>
+    <input class="vault-pin-input" type="password" id="vaultPinInput" maxlength="4" placeholder="····" autocomplete="off" inputmode="numeric">
+    <button class="btn-vault-unlock" onclick="tryVaultUnlock()">Access Vault</button>
+    <div class="vault-cancel" onclick="closeVaultModal()">Cancel</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── TOPBAR ── -->
+  <header class="topbar">
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Open menu">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <div class="topbar-brand">
+      <div class="brand-icon" id="brandIconTrigger">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <span class="brand-name">Txlhx · <span>DigiWallet</span></span>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" id="searchInput" placeholder="Search documents…" oninput="filterDocs()">
+    </div>
+
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="lock-btn" onclick="lockWallet()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Lock</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="sidebar-overlay hidden" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <div class="layout">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar" id="sidebar">
+
+      <button class="sidebar-close-btn" onclick="closeSidebar()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Close Menu
+      </button>
+
+      <div class="sidebar-label">Overview</div>
+      <button class="sidebar-item active" onclick="filterCategory('all', this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All Documents
+        <span class="count" id="cnt-all">15</span>
+      </button>
+
+      <div class="sidebar-label">Categories</div>
+      <button class="sidebar-item" onclick="filterCategory('cert', this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+        Certificates
+        <span class="count" id="cnt-cert">6</span>
+      </button>
+      <button class="sidebar-item" onclick="filterCategory('result', this)">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Academic Results
+        <span class="count" id="cnt-result">4</span>
+      </button>
+      <button class="sidebar-item" onclick="filterCategory('intern', this)">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Internships
+        <span class="count" id="cnt-intern">3</span>
+      </button>
+      <button class="sidebar-item" onclick="filterCategory('exp', this)">
+        <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Experience
+        <span class="count" id="cnt-exp">1</span>
+      </button>
+      <button class="sidebar-item" onclick="filterCategory('res', this)">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        Resume
+        <span class="count" id="cnt-res">1</span>
+      </button>
+
+      <!-- PERSONAL VAULT sidebar — hidden until vault unlocked -->
+      <div id="vaultSidebarSection" style="display:none">
+        <div class="sidebar-label" style="color:#38bdf8;opacity:0.7">Private Vault</div>
+        <button class="sidebar-item vault-item" onclick="filterCategory('pers', this)" id="vaultSidebarBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Personal Docs
+          <span class="count" id="cnt-pers">6</span>
+        </button>
+        <button class="sidebar-item" onclick="lockVault()" style="color:var(--danger);font-size:0.78rem;padding:7px 10px;margin-top:2px">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Lock Vault
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main" id="mainContent">
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(79,124,255,0.12);color:#4f7cff">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div><div class="stat-num" id="stat-total">15</div><div class="stat-lbl">Total Documents</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(62,207,142,0.12);color:#3ecf8e">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+          </div>
+          <div><div class="stat-num">6</div><div class="stat-lbl">Certificates</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div><div class="stat-num">3</div><div class="stat-lbl">Internships</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(167,139,250,0.12);color:#a78bfa">
+            <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div><div class="stat-num">1</div><div class="stat-lbl">Experience</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════
+           CERTIFICATES  (6)
+      ════════════════════════════ -->
+      <div class="section-hdr" data-cat="cert">
+        <h2>Certificates</h2>
+        <span>6 documents</span>
+      </div>
+      <div class="section-divider" data-cat="cert"></div>
+      <div class="doc-grid" id="grid-cert">
+
+        <div class="doc-card" data-cat="cert" data-title="CRS Certificate" data-file="documents/certificates/crs.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">CRS Certificate</div>
+              <span class="doc-category">Customer Relationship &amp; Sales</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('CRS Certificate','documents/certificates/crs.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/crs.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="cert" data-title="Tally Essential" data-file="documents/certificates/tally-essential.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Tally Essential</div>
+              <span class="doc-category">Accounting &amp; Finance</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Tally Essential','documents/certificates/tally-essential.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/tally-essential.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="cert" data-title="Tally Advanced GST" data-file="documents/certificates/tally-advanced.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Tally Advanced GST</div>
+              <span class="doc-category">Accounting &amp; Finance</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Tally Advanced GST','documents/certificates/tally-advanced.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/tally-advanced.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="cert" data-title="Communication Skills Level 1" data-file="documents/certificates/iccs1.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Communication Skills — L1</div>
+              <span class="doc-category">Communication</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Communication Skills Level 1','documents/certificates/iccs1.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/iccs1.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="cert" data-title="Communication Skills Level 2" data-file="documents/certificates/iccs2.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Communication Skills — L2</div>
+              <span class="doc-category">Communication</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Communication Skills Level 2','documents/certificates/iccs2.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/iccs2.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="cert" data-title="Communication Skills Level 3" data-file="documents/certificates/iccs3.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-cert">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span class="ext-tag" style="background:#4f7cff">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Communication Skills — L3</div>
+              <span class="doc-category">Communication</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · 1 page</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Communication Skills Level 3','documents/certificates/iccs3.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/certificates/iccs3.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /grid-cert -->
+
+      <!-- ════════════════════════════
+           ACADEMIC RESULTS  (4)
+      ════════════════════════════ -->
+      <div class="section-hdr" data-cat="result">
+        <h2>Academic Results</h2>
+        <span>4 documents</span>
+      </div>
+      <div class="section-divider" data-cat="result"></div>
+      <div class="doc-grid" id="grid-result">
+
+        <div class="doc-card" data-cat="result" data-title="SSC Result" data-file="documents/results/ssc.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-result">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span class="ext-tag" style="background:#3ecf8e">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">SSC Result (10th)</div>
+              <span class="doc-category">73.40% · 2022</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2022</span><span>PDF · Marksheet</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('SSC Result','documents/results/ssc.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/results/ssc.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="result" data-title="HSC Result" data-file="documents/results/hsc.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-result">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span class="ext-tag" style="background:#3ecf8e">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">HSC Result (12th)</div>
+              <span class="doc-category">65.83% · 2024</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · Marksheet</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('HSC Result','documents/results/hsc.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/results/hsc.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="result" data-title="MHT-CET Result" data-file="documents/results/mhtcet.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-result">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+              <span class="ext-tag" style="background:#3ecf8e">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">MHT-CET Result</div>
+              <span class="doc-category">51.28% · Entrance Exam</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024</span><span>PDF · Score Card</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('MHT-CET Result','documents/results/mhtcet.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/results/mhtcet.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="result" data-title="B.Sc Computer Science Results" data-file="documents/results/bsc.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-result">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+              <span class="ext-tag" style="background:#3ecf8e">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">B.Sc CS Results</div>
+              <span class="doc-category">Mulund College · Pursuing</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2024–Present</span><span>PDF · Marksheet</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('B.Sc Computer Science Results','documents/results/bsc.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/results/bsc.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /grid-result -->
+
+      <!-- ════════════════════════════
+           INTERNSHIPS  (3)
+      ════════════════════════════ -->
+      <div class="section-hdr" data-cat="intern">
+        <h2>Internship Certificates</h2>
+        <span>3 documents</span>
+      </div>
+      <div class="section-divider" data-cat="intern"></div>
+      <div class="doc-grid" id="grid-intern">
+
+        <div class="doc-card" data-cat="intern" data-title="Marpu Foundation" data-file="documents/internships/marpu.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-intern">
+              <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              <span class="ext-tag" style="background:#f59e0b">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Marpu Foundation</div>
+              <span class="doc-category">Writing &amp; Blogging · Mar–Apr 2026</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2026</span><span>PDF · Certificate</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Marpu Foundation Internship','documents/internships/marpu.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/internships/marpu.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="intern" data-title="Imarticus Learning" data-file="documents/internships/imarticus.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-intern">
+              <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              <span class="ext-tag" style="background:#f59e0b">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Imarticus Learning</div>
+              <span class="doc-category">Data Science · 1 Month</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2025</span><span>PDF · Certificate</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Imarticus Learning Internship','documents/internships/imarticus.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/internships/imarticus.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+        <div class="doc-card" data-cat="intern" data-title="SaiKet Systems" data-file="documents/internships/saiket.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-intern">
+              <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              <span class="ext-tag" style="background:#f59e0b">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">SaiKet Systems</div>
+              <span class="doc-category">Power BI · Feb–Mar 2026</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2026</span><span>PDF · Certificate</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('SaiKet Systems Internship','documents/internships/saiket.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/internships/saiket.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /grid-intern -->
+
+      <!-- ════════════════════════════
+           EXPERIENCE  (1)
+      ════════════════════════════ -->
+      <div class="section-hdr" data-cat="exp">
+        <h2>Experience Letters</h2>
+        <span>1 document</span>
+      </div>
+      <div class="section-divider" data-cat="exp"></div>
+      <div class="doc-grid" id="grid-exp">
+
+        <div class="doc-card" data-cat="exp" data-title="Navjeevan Lokvikas Sanstha" data-file="documents/experience/navjeevan.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-exp">
+              <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span class="ext-tag" style="background:#a78bfa">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Navjeevan Lokvikas Sanstha</div>
+              <span class="doc-category">WordPress Developer · Experience Letter</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2026</span><span>PDF · Experience Letter</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Navjeevan Experience Letter','documents/experience/navjeevan.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/experience/navjeevan.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /grid-exp -->
+
+      <!-- ════════════════════════════
+           RESUME  (1)
+      ════════════════════════════ -->
+      <div class="section-hdr" data-cat="res">
+        <h2>Resume</h2>
+        <span>1 document</span>
+      </div>
+      <div class="section-divider" data-cat="res"></div>
+      <div class="doc-grid" id="grid-res">
+
+        <div class="doc-card" data-cat="res" data-title="Resume CV" data-file="documents/resume/resume.pdf">
+          <div class="doc-card-top">
+            <div class="doc-file-icon cat-res">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span class="ext-tag" style="background:#f87171">PDF</span>
+            </div>
+            <div class="doc-info">
+              <div class="doc-title">Abutalha Sayyed — CV</div>
+              <span class="doc-category">Resume · Latest Version</span>
+            </div>
+          </div>
+          <div class="doc-meta"><span>2026</span><span>PDF · Resume</span></div>
+          <div class="doc-actions">
+            <button class="doc-btn doc-btn-view" onclick="openModal('Resume / CV','documents/resume/resume.pdf')">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+            </button>
+            <a class="doc-btn doc-btn-dl" href="documents/resume/resume.pdf" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+            </a>
+          </div>
+        </div>
+
+      </div><!-- /grid-res -->
+
+      <!-- ════════════════════════════
+           PERSONAL VAULT SECTION
+           Hidden by default. Shown after vault PIN verified.
+           Contains 6 personal documents.
+      ════════════════════════════ -->
+      <div id="vaultSection">
+
+        <div class="section-hdr vault-hdr" data-cat="pers">
+          <h2>Personal Documents</h2>
+          <span>6 documents · Private</span>
+        </div>
+        <div class="section-divider" data-cat="pers"></div>
+        <div class="doc-grid" id="grid-pers">
+
+          <!-- Aadhar Card -->
+          <div class="doc-card" data-cat="pers" data-title="Aadhar Card" data-file="documents/personal/aadhar.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">Aadhar Card</div>
+                <span class="doc-category">Personal ID · Government</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Personal</span><span>PDF · ID Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('Aadhar Card','documents/personal/aadhar.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/aadhar.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+          <!-- PAN Card -->
+          <div class="doc-card" data-cat="pers" data-title="PAN Card" data-file="documents/personal/pan.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">PAN Card</div>
+                <span class="doc-category">Personal ID · Government</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Personal</span><span>PDF · ID Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('PAN Card','documents/personal/pan.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/pan.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+          <!-- Birth Certificate -->
+          <div class="doc-card" data-cat="pers" data-title="Birth Certificate" data-file="documents/personal/birth-certificate.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">Birth Certificate</div>
+                <span class="doc-category">Identity Record · Government</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Personal</span><span>PDF · Government Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('Birth Certificate','documents/personal/birth-certificate.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/birth-certificate.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+          <!-- Ration Card -->
+          <div class="doc-card" data-cat="pers" data-title="Ration Card" data-file="documents/personal/ration-card.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">Ration Card</div>
+                <span class="doc-category">Family ID · Government</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Personal</span><span>PDF · Government Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('Ration Card','documents/personal/ration-card.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/ration-card.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+          <!-- Domicile Certificate -->
+          <div class="doc-card" data-cat="pers" data-title="Domicile Certificate" data-file="documents/personal/domicile-certificate.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">Domicile Certificate</div>
+                <span class="doc-category">Residence Proof · Government</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Personal</span><span>PDF · Government Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('Domicile Certificate','documents/personal/domicile-certificate.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/domicile-certificate.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+          <!-- Leaving & Bonafide Certificate -->
+          <div class="doc-card" data-cat="pers" data-title="Leaving and Bonafide Certificate" data-file="documents/personal/leaving-bonafide-certificate.pdf">
+            <div class="doc-card-top">
+              <div class="doc-file-icon cat-pers">
+                <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                <span class="ext-tag" style="background:#38bdf8">PDF</span>
+              </div>
+              <div class="doc-info">
+                <div class="doc-title">Leaving &amp; Bonafide Certificate</div>
+                <span class="doc-category">Education · School/College Records</span>
+              </div>
+            </div>
+            <div class="doc-meta"><span>Education</span><span>PDF · Academic Document</span></div>
+            <div class="doc-actions">
+              <button class="doc-btn doc-btn-view" onclick="openModal('Leaving &amp; Bonafide Certificate','documents/personal/leaving-bonafide-certificate.pdf')">
+                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View PDF
+              </button>
+              <a class="doc-btn doc-btn-dl" href="documents/personal/leaving-bonafide-certificate.pdf" download>
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+              </a>
+            </div>
+          </div>
+
+        </div><!-- /grid-pers -->
+
+      </div><!-- /vaultSection -->
+
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <p>No documents matched your search.</p>
+      </div>
+
+    </main><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     PDF MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="pdfModal" onclick="handleModalClick(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Document</div>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <span class="modal-footer-name" id="modalFooterName"></span>
+      <a class="modal-dl-btn" id="modalDlBtn" href="#" download>
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG  — change PINs here
+═══════════════════════════════════════ */
+const CORRECT_PIN = '0135';   // Main wallet PIN
+const VAULT_PIN   = '1234';   // Personal vault PIN
+const SESSION_KEY = 'tdw_unlocked';
+const VAULT_KEY   = 'tdw_vault_unlocked';
+
+/* ═══════════════════════════════════════
+   PUBLIC CATEGORIES (vault excluded)
+═══════════════════════════════════════ */
+const PUBLIC_CATS = ['cert','result','intern','exp','res'];
+const ALL_CATS    = [...PUBLIC_CATS, 'pers'];
+
+/* ═══════════════════════════════════════
+   LOCK / UNLOCK — MAIN WALLET
+═══════════════════════════════════════ */
+const pinInput   = document.getElementById('pinInput');
+const lockError  = document.getElementById('lockError');
+const lockScreen = document.getElementById('lockScreen');
+const appEl      = document.getElementById('app');
+
+pinInput.addEventListener('input', () => {
+  const val = pinInput.value;
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('d' + i);
+    dot.classList.toggle('filled', i < val.length);
+    dot.classList.remove('error');
+  }
+  lockError.classList.remove('show');
+  pinInput.classList.remove('shake');
+});
+
+pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+
+function tryUnlock() {
+  if (pinInput.value === CORRECT_PIN) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    lockScreen.classList.add('fade-out');
+    setTimeout(() => {
+      lockScreen.style.display = 'none';
+      appEl.style.display = 'block';
+      requestAnimationFrame(() => requestAnimationFrame(() => { appEl.style.opacity = '1'; }));
+    }, 550);
+  } else {
+    pinInput.classList.add('shake');
+    lockError.classList.add('show');
+    for (let i = 0; i < 4; i++) document.getElementById('d' + i).classList.add('error');
+    setTimeout(() => {
+      pinInput.value = '';
+      for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('d' + i);
+        d.classList.remove('filled', 'error');
+      }
+      pinInput.classList.remove('shake');
+    }, 700);
+  }
+}
+
+function lockWallet() {
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(VAULT_KEY);
+  hideVaultUI();
+  appEl.style.opacity = '0';
+  setTimeout(() => {
+    appEl.style.display = 'none';
+    lockScreen.style.display = 'flex';
+    lockScreen.style.opacity = '1';
+    lockScreen.classList.remove('fade-out');
+    pinInput.value = '';
+    lockError.classList.remove('show');
+    for (let i = 0; i < 4; i++) document.getElementById('d' + i).classList.remove('filled', 'error');
+  }, 350);
+}
+
+/* Auto-unlock if session active */
+if (sessionStorage.getItem(SESSION_KEY)) {
+  lockScreen.style.display = 'none';
+  appEl.style.display = 'block';
+  appEl.style.opacity = '1';
+}
+
+/* ═══════════════════════════════════════
+   SECRET VAULT TRIGGER
+   Triple-click the lock icon on the lock screen,
+   OR triple-click the brand icon inside the app.
+═══════════════════════════════════════ */
+function makeTripleClickTrigger(elementId) {
+  let clicks = 0;
+  let timer  = null;
+  document.getElementById(elementId).addEventListener('click', () => {
+    clicks++;
+    clearTimeout(timer);
+    timer = setTimeout(() => { clicks = 0; }, 700);
+    if (clicks >= 3) {
+      clicks = 0;
+      openVaultModal();
+    }
+  });
+}
+makeTripleClickTrigger('lockIconTrigger');
+makeTripleClickTrigger('brandIconTrigger');
+
+/* ═══════════════════════════════════════
+   PERSONAL VAULT MODAL
+═══════════════════════════════════════ */
+const vaultModal    = document.getElementById('vaultModal');
+const vaultPinInput = document.getElementById('vaultPinInput');
+const vaultError    = document.getElementById('vaultError');
+
+function openVaultModal() {
+  vaultPinInput.value = '';
+  vaultError.classList.remove('show');
+  vaultPinInput.classList.remove('shake');
+  vaultModal.classList.add('open');
+  setTimeout(() => vaultPinInput.focus(), 200);
+}
+
+function closeVaultModal() {
+  vaultModal.classList.remove('open');
+  vaultPinInput.value = '';
+  vaultError.classList.remove('show');
+}
+
+vaultPinInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryVaultUnlock(); });
+
+function tryVaultUnlock() {
+  if (vaultPinInput.value === VAULT_PIN) {
+    sessionStorage.setItem(VAULT_KEY, '1');
+    closeVaultModal();
+    showVaultUI();
+    showToast('Personal Vault unlocked');
+  } else {
+    vaultPinInput.classList.add('shake');
+    vaultError.classList.add('show');
+    setTimeout(() => {
+      vaultPinInput.value = '';
+      vaultPinInput.classList.remove('shake');
+    }, 600);
+  }
+}
+
+/* Escape key closes modals */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeVaultModal();
+  }
+});
+
+/* ═══════════════════════════════════════
+   VAULT UI — SHOW / HIDE
+═══════════════════════════════════════ */
+function showVaultUI() {
+  document.getElementById('vaultSection').classList.add('unlocked');
+  document.getElementById('vaultSidebarSection').style.display = 'block';
+  /* Update "All Documents" count in sidebar to include vault docs */
+  document.getElementById('cnt-all').textContent = '21';
+}
+
+function hideVaultUI() {
+  document.getElementById('vaultSection').classList.remove('unlocked');
+  document.getElementById('vaultSidebarSection').style.display = 'none';
+  document.getElementById('cnt-all').textContent = '15';
+}
+
+function lockVault() {
+  sessionStorage.removeItem(VAULT_KEY);
+  hideVaultUI();
+  /* If currently on vault category, switch back to All */
+  const activeBtn = document.querySelector('.sidebar-item.active');
+  if (activeBtn && activeBtn.id === 'vaultSidebarBtn') {
+    filterCategory('all', document.querySelector('[onclick="filterCategory(\'all\', this)"]'));
+  }
+  showToast('Personal Vault locked');
+  closeSidebar();
+}
+
+/* Restore vault state if session still active */
+if (sessionStorage.getItem(VAULT_KEY)) showVaultUI();
+
+/* ═══════════════════════════════════════
+   AUTO-LOCK: page hidden (tab switch)
+═══════════════════════════════════════ */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && sessionStorage.getItem(VAULT_KEY)) {
+    sessionStorage.removeItem(VAULT_KEY);
+    hideVaultUI();
+  }
+});
+
+/* ═══════════════════════════════════════
+   AUTO-LOCK: inactivity (5 minutes)
+═══════════════════════════════════════ */
+let inactivityTimer = null;
+const INACTIVITY_MS = 5 * 60 * 1000;
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    if (sessionStorage.getItem(VAULT_KEY)) {
+      sessionStorage.removeItem(VAULT_KEY);
+      hideVaultUI();
+      showToast('Personal Vault auto-locked due to inactivity');
+    }
+  }, INACTIVITY_MS);
+}
+['mousemove','keydown','touchstart','click','scroll'].forEach(evt => {
+  document.addEventListener(evt, resetInactivityTimer, { passive: true });
+});
+resetInactivityTimer();
+
+/* ═══════════════════════════════════════
+   THEME TOGGLE
+═══════════════════════════════════════ */
+function toggleTheme() {
+  const html   = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('tdw_theme', isDark ? 'light' : 'dark');
+}
+const savedTheme = localStorage.getItem('tdw_theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+
+/* ═══════════════════════════════════════
+   MOBILE SIDEBAR DRAWER
+═══════════════════════════════════════ */
+const sidebar        = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+function toggleSidebar() {
+  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+}
+function openSidebar() {
+  sidebar.classList.add('open');
+  sidebarOverlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  sidebarOverlay.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR CATEGORY FILTER
+═══════════════════════════════════════ */
+function filterCategory(cat, btn) {
+  const vaultUnlocked = !!sessionStorage.getItem(VAULT_KEY);
+
+  /* Update active state */
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  /* Reset search */
+  document.getElementById('searchInput').value = '';
+  document.getElementById('emptyState').style.display = 'none';
+
+  if (cat === 'all') {
+    /* Show all public sections; show vault section only if unlocked */
+    PUBLIC_CATS.forEach(c => {
+      const grid = document.getElementById('grid-' + c);
+      const hdr  = document.querySelector(`.section-hdr[data-cat="${c}"]`);
+      const div  = document.querySelector(`.section-divider[data-cat="${c}"]`);
+      if (grid) grid.style.display = '';
+      if (hdr)  hdr.style.display  = '';
+      if (div)  div.style.display  = '';
+    });
+    /* Show all cards in public categories */
+    document.querySelectorAll('.doc-card:not([data-cat="pers"])').forEach(c => c.style.display = '');
+    /* Vault */
+    const vaultSection = document.getElementById('vaultSection');
+    vaultSection.style.display = (vaultUnlocked) ? '' : 'none';
+    if (vaultUnlocked) {
+      document.querySelectorAll('.doc-card[data-cat="pers"]').forEach(c => c.style.display = '');
+    }
+  } else {
+    /* Single category view */
+    ALL_CATS.forEach(c => {
+      const grid = document.getElementById('grid-' + c);
+      const hdr  = document.querySelector(`.section-hdr[data-cat="${c}"]`);
+      const div  = document.querySelector(`.section-divider[data-cat="${c}"]`);
+      const show = (c === cat);
+      if (grid) grid.style.display = show ? '' : 'none';
+      if (hdr)  hdr.style.display  = show ? '' : 'none';
+      if (div)  div.style.display  = show ? '' : 'none';
+    });
+    /* Vault section container */
+    const vaultSection = document.getElementById('vaultSection');
+    vaultSection.style.display = (cat === 'pers' && vaultUnlocked) ? '' : 'none';
+    /* Show only cards matching the selected category */
+    document.querySelectorAll('.doc-card').forEach(c => {
+      c.style.display = (c.dataset.cat === cat) ? '' : 'none';
+    });
+  }
+
+  closeSidebar();
+}
+
+/* ═══════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════ */
+function filterDocs() {
+  const q             = document.getElementById('searchInput').value.toLowerCase().trim();
+  const vaultUnlocked = !!sessionStorage.getItem(VAULT_KEY);
+  const cards         = document.querySelectorAll('.doc-card');
+  let visible         = 0;
+
+  cards.forEach(c => {
+    const isVaultCard = c.dataset.cat === 'pers';
+    if (isVaultCard && !vaultUnlocked) { c.style.display = 'none'; return; }
+    const match = c.dataset.title.toLowerCase().includes(q) ||
+                  c.dataset.cat.toLowerCase().includes(q)   ||
+                  c.textContent.toLowerCase().includes(q);
+    c.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+
+  /* Show/hide section headers and grids based on visible cards */
+  const catsToCheck = vaultUnlocked ? ALL_CATS : PUBLIC_CATS;
+  catsToCheck.forEach(cat => {
+    const grid = document.getElementById('grid-' + cat);
+    const hdr  = document.querySelector(`.section-hdr[data-cat="${cat}"]`);
+    const div  = document.querySelector(`.section-divider[data-cat="${cat}"]`);
+    const hasVisible = grid && [...grid.querySelectorAll('.doc-card')].some(c => c.style.display !== 'none');
+    if (grid) grid.style.display = hasVisible ? '' : 'none';
+    if (hdr)  hdr.style.display  = hasVisible ? '' : 'none';
+    if (div)  div.style.display  = hasVisible ? '' : 'none';
+  });
+
+  /* Vault section container */
+  const vaultSection = document.getElementById('vaultSection');
+  if (vaultUnlocked) {
+    const vaultGrid = document.getElementById('grid-pers');
+    const hasVaultVisible = vaultGrid && [...vaultGrid.querySelectorAll('.doc-card')].some(c => c.style.display !== 'none');
+    vaultSection.style.display = hasVaultVisible ? '' : 'none';
+  } else {
+    vaultSection.style.display = 'none';
+  }
+
+  document.getElementById('emptyState').style.display = visible === 0 ? 'block' : 'none';
+
+  /* Ensure all sidebar items are deactivated during search */
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+}
+
+/* ═══════════════════════════════════════
+   PDF MODAL
+═══════════════════════════════════════ */
+function openModal(title, file) {
+  document.getElementById('modalTitle').textContent      = title;
+  document.getElementById('modalFooterName').textContent = file;
+  document.getElementById('modalDlBtn').href             = file;
+  document.getElementById('modalDlBtn').setAttribute('download', title);
+
+  const body = document.getElementById('modalBody');
+  /* Try to embed via iframe first; fall back to placeholder if file missing */
+  body.innerHTML = `
+    <div class="modal-placeholder">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <h3>${title}</h3>
+      <p>Place your PDF at <code>${file}</code> to enable inline preview.</p>
+      <a href="${file}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Open in New Tab
+      </a>
+    </div>`;
+
+  document.getElementById('pdfModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('pdfModal').classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { document.getElementById('modalBody').innerHTML = ''; }, 260);
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('pdfModal')) closeModal();
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ═══════════════════════════════════════
+   SECURITY
+   · Disable right-click context menu
+   · Block DevTools keyboard shortcuts
+   · Disable drag-and-drop on cards
+═══════════════════════════════════════ */
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+document.addEventListener('keydown', e => {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['I','J','C','K'].includes(e.key.toUpperCase())) ||
+    (e.ctrlKey && ['U','S'].includes(e.key.toUpperCase()))
+  ) {
+    e.preventDefault();
+    return false;
+  }
+});
+
+document.addEventListener('dragstart', e => {
+  if (e.target.closest('.doc-card') || e.target.tagName === 'IMG') {
+    e.preventDefault();
+    return false;
+  }
+});
+document.addEventListener('drop',     e => e.preventDefault());
+document.addEventListener('dragover', e => e.preventDefault());
+</script>
+</body>
+</html>
