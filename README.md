@@ -6,3 +6,5 @@ DigiWallet is a digital wallet project designed to provide a simple and user-fri
 - Simple user interface
 - Responsive design
 - Easy navigation
+## Future Improvements
+- Add wallet transaction history
